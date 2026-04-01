@@ -1,0 +1,501 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cybertrading – Lieferanten-RMA Workspace</title>
+  <style>
+    :root{
+      --bg1:#06101c; --bg2:#0b2138; --text:#eef7ff; --muted:#9eb5c8; --cyan:#41d3ff;
+      --green:#18c37e; --orange:#ff9e3d; --red:#ff5f6d; --purple:#9b7bff;
+      --shadow:0 18px 45px rgba(0,0,0,.28); --shadow-soft:0 10px 22px rgba(0,0,0,.18);
+    }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,"Segoe UI",Arial,sans-serif; color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 10% -10%, rgba(65,211,255,.18), transparent 60%),
+        radial-gradient(900px 650px at 100% 0%, rgba(33,85,255,.14), transparent 58%),
+        linear-gradient(180deg, var(--bg2) 0%, var(--bg1) 100%);
+      min-height:100vh;
+      background-repeat:no-repeat;
+      background-attachment:fixed;
+      background-size:cover;
+    }
+    .app{max-width:1700px; margin:0 auto; padding:22px 18px 28px}
+    .topbar{display:grid; grid-template-columns:1fr auto; gap:16px; align-items:start; margin-bottom:18px}
+    .hero{
+      padding:24px 26px; border-radius:26px;
+      background:linear-gradient(135deg, rgba(65,211,255,.15), rgba(16,183,167,.08) 35%, rgba(33,85,255,.10) 100%), rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08); box-shadow:var(--shadow);
+    }
+    .hero h1{margin:0 0 8px; font-size:34px}
+    .hero p{margin:0; color:var(--muted); line-height:1.5; max-width:1100px}
+    .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-end}
+    .btn{
+      border:none; border-radius:14px; padding:12px 16px; background:rgba(255,255,255,.06); color:var(--text);
+      cursor:pointer; font-weight:700; box-shadow:var(--shadow-soft); border:1px solid rgba(255,255,255,.08)
+    }
+    .btn.primary{background:linear-gradient(135deg, rgba(65,211,255,.25), rgba(33,85,255,.25))}
+    .btn.success{background:linear-gradient(135deg, rgba(24,195,126,.25), rgba(16,183,167,.18))}
+    .btn.warn{background:linear-gradient(135deg, rgba(255,158,61,.24), rgba(255,95,109,.16))}
+    .status{
+      padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+      color:#d6edf8; min-width:220px; text-align:center; font-size:13px; font-weight:700
+    }
+    .tabs{display:flex; gap:10px; margin:18px 0 16px; flex-wrap:wrap}
+    .tab{
+      padding:12px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.05);
+      color:#d8edf8; cursor:pointer; font-weight:700
+    }
+    .tab.active{background:linear-gradient(135deg, rgba(65,211,255,.18), rgba(33,85,255,.18))}
+    .workspace{display:grid; grid-template-columns:1fr 380px; gap:18px; align-items:start}
+    .panel{
+      border-radius:24px; background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.08); box-shadow:var(--shadow); overflow:hidden
+    }
+    .boardWrap{padding:18px}
+    .board{display:grid; grid-template-columns:repeat(3, minmax(360px, 1fr)); gap:18px; align-items:start; overflow:auto}
+    .lane{border-radius:22px; background:rgba(3,12,22,.22); border:1px solid rgba(255,255,255,.05); padding:16px; min-height:320px}
+    .lane h3{margin:0 0 8px; font-size:18px} .lane p{margin:0 0 14px; color:var(--muted); font-size:12px; line-height:1.45}
+    .laneCards{display:flex; flex-direction:column; gap:12px}
+    .card{
+      border-radius:18px; padding:14px 14px 12px; background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.035));
+      border:1px solid rgba(255,255,255,.08); box-shadow:0 8px 24px rgba(0,0,0,.22); border-left:4px solid var(--cyan); cursor:pointer
+    }
+    .card.tech{border-left-color:var(--purple)} .card.escalation{border-left-color:var(--red)} .card.end{border-left-color:var(--green)}
+    .card .id{
+      display:inline-flex; min-width:58px; padding:6px 10px; border-radius:999px; background:rgba(65,211,255,.12);
+      border:1px solid rgba(65,211,255,.22); color:#baf3ff; font-size:12px; font-weight:800; margin-bottom:10px
+    }
+    .card.tech .id{background:rgba(155,123,255,.14); border-color:rgba(155,123,255,.26); color:#e5dcff}
+    .card.escalation .id{background:rgba(255,95,109,.14); border-color:rgba(255,95,109,.24); color:#ffd5db}
+    .card.end .id{background:rgba(24,195,126,.14); border-color:rgba(24,195,126,.22); color:#d6ffe6}
+    .card h4{margin:0 0 8px; font-size:15px; line-height:1.35} .card p{margin:0; color:#dce8f1; font-size:13px; line-height:1.45}
+    .meta{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    .tag{
+      display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:11px; font-weight:700;
+      border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); color:#e0edf7
+    }
+    .needY{background:rgba(255,158,61,.11); color:#ffd9b0; border-color:rgba(255,158,61,.22)} .needN{background:rgba(255,255,255,.07); color:#d6e5ef}
+    .haveY{background:rgba(24,195,126,.11); color:#cef9df; border-color:rgba(24,195,126,.18)} .haveN{background:rgba(255,95,109,.11); color:#ffd3d8; border-color:rgba(255,95,109,.18)}
+    .ai-low{background:rgba(255,95,109,.12); color:#ffd3d8} .ai-mid{background:rgba(255,158,61,.11); color:#ffe0c0}
+    .ai-high{background:rgba(65,211,255,.11); color:#c9f5ff} .ai-full{background:rgba(24,195,126,.11); color:#d6ffe8}
+    .editor{padding:18px; position:sticky; top:16px; max-height:calc(100vh - 50px); overflow:auto; background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025))}
+    .editor h3{margin:0 0 12px; font-size:20px} .editor p.help{margin:0 0 16px; color:var(--muted); font-size:13px; line-height:1.5}
+    .field{margin-bottom:12px} .field label{display:block; font-size:12px; color:#c8dfef; margin-bottom:6px; font-weight:700}
+    input[type="text"], textarea, select{
+      width:100%; border:none; outline:none; border-radius:14px; padding:11px 12px; background:rgba(255,255,255,.06);
+      color:var(--text); border:1px solid rgba(255,255,255,.08); font-family:inherit; font-size:14px
+    }
+    textarea{min-height:90px; resize:vertical; line-height:1.45}
+    .two{display:grid; grid-template-columns:1fr 1fr; gap:10px} .three{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
+    .editorActions{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px} .hidden{display:none !important}
+    .matrixHeader{display:flex; justify-content:space-between; align-items:center; gap:14px; padding:18px 18px 12px}
+    .matrixHeader h2{margin:0; font-size:28px} .matrixHeader p{margin:0; color:var(--muted); font-size:13px}
+    .matrixTableWrap{overflow:auto; padding:0 0 8px} table{width:100%; border-collapse:collapse}
+    thead th{
+      text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.7px; color:#b9d8ea; background:rgba(255,255,255,.04);
+      padding:14px 16px; border-top:1px solid rgba(255,255,255,.08); border-bottom:1px solid rgba(255,255,255,.08); position:sticky; top:0; z-index:2
+    }
+    tbody td{font-size:13px; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:top; line-height:1.45}
+    tbody tr:hover{background:rgba(255,255,255,.025)} .small{font-size:12px; color:var(--muted)}
+
+    select{
+      color:var(--text);
+      background-color:rgba(255,255,255,.06);
+    }
+    option{
+      color:#111 !important;
+      background:#ffffff !important;
+    }
+
+    @media (max-width:1400px){ .workspace{grid-template-columns:1fr} .editor{position:relative; top:auto; max-height:none} }
+    @media (max-width:1100px){ .board{grid-template-columns:1fr} .topbar{grid-template-columns:1fr} .toolbar{justify-content:flex-start} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="hero">
+        <h1>Lieferanten-RMA Workspace</h1>
+        <p>Bearbeitbare Cybertrading-Basis für euren Ist-Prozess. Karten sortieren sich automatisch nach ihrer Nummer, Änderungen werden automatisch gespeichert und die Leitfaden- & Automationsmatrix wird live aus den Kartendaten erzeugt. Für gemeinsamen Online-Speicher nutzt diese Version zusätzlich Cloud laden / Cloud speichern über Vercel + Supabase.</p>
+      </div>
+      <div class="toolbar">
+        <div class="status" id="saveStatus">Autosave aktiv</div>
+        <input id="pinInput" type="text" placeholder="Cloud-PIN" style="min-width:140px;border:none;outline:none;border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.08);font-weight:700;" />
+        <button class="btn" id="cloudLoadBtn">Cloud laden</button>
+        <button class="btn success" id="cloudSaveBtn">Cloud speichern</button>
+        <button class="btn success" id="saveBtn">Lokal speichern</button>
+        <button class="btn primary" id="addBtn">Neue Karte</button>
+        <button class="btn" id="exportBtn">JSON exportieren</button>
+        <button class="btn warn" id="resetBtn">Auf Basis zurücksetzen</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-view="boardView">Board</button>
+      <button class="tab" data-view="matrixView">Matrix</button>
+    </div>
+
+    <div id="boardView" class="workspace">
+      <div class="panel boardWrap">
+        <div class="board" id="board"></div>
+      </div>
+      <div class="panel editor">
+        <h3>Karte bearbeiten</h3>
+        <p class="help">Karte links anklicken, Inhalt ändern, fertig. Nummer ändern = Karte sortiert sich automatisch neu. Alle Änderungen werden lokal im Browser gespeichert.</p>
+        <div id="editorEmpty" class="small">Noch keine Karte ausgewählt.</div>
+        <div id="editorForm" class="hidden">
+          <div class="two">
+            <div class="field"><label for="f-id">ID / Nummer</label><input id="f-id" type="text" placeholder="z. B. 6.2.1" /></div>
+            <div class="field"><label for="f-lane">Phase / Lane</label>
+              <select id="f-lane">
+                <option value="A">Phase A – Eingang & Initialisierung</option>
+                <option value="B">Phase B – Fehlteil / Nachlieferung</option>
+                <option value="C">Phase C – Defekt / Rücksendung / Schwund</option>
+              </select>
+            </div>
+          </div>
+          <div class="two">
+            <div class="field"><label for="f-type">Kartentyp</label>
+              <select id="f-type">
+                <option value="process">Prozess</option><option value="tech">Technik</option><option value="escalation">Eskalation</option><option value="end">Abschluss</option>
+              </select>
+            </div>
+            <div class="field"><label for="f-ai">KI-/Auto-Potenzial</label>
+              <select id="f-ai">
+                <option value="low">Eher niedrig</option><option value="mid">Mittel</option><option value="high">Hoch</option><option value="full">Sehr hoch</option>
+              </select>
+            </div>
+          </div>
+          <div class="field"><label for="f-title">Titel</label><input id="f-title" type="text" placeholder="Titel" /></div>
+          <div class="field"><label for="f-description">Beschreibung</label><textarea id="f-description" placeholder="Beschreibung"></textarea></div>
+          <div class="three">
+            <div class="field"><label for="f-guideNeeded">Leitfaden nötig</label><select id="f-guideNeeded"><option value="true">Ja</option><option value="false">Nein</option></select></div>
+            <div class="field"><label for="f-guideExists">Leitfaden vorhanden</label><select id="f-guideExists"><option value="true">Ja</option><option value="false">Nein</option><option value="na">n/a</option></select></div>
+            <div class="field"><label for="f-comment">Kommentar</label><input id="f-comment" type="text" placeholder="Kurzkommentar" /></div>
+          </div>
+          <div class="editorActions">
+            <button class="btn success" id="duplicateBtn">Duplizieren</button>
+            <button class="btn warn" id="deleteBtn">Karte löschen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="matrixView" class="panel hidden">
+      <div class="matrixHeader">
+        <div><h2>Leitfaden- & Automationsmatrix</h2><p>Verdichtet für SOP-Aufbau, Priorisierung und spätere IT-/KI-Bewertung</p></div>
+        <div class="small" id="matrixCount"></div>
+      </div>
+      <div class="matrixTableWrap">
+        <table>
+          <thead><tr><th style="width:100px">ID</th><th>Schritt</th><th style="width:130px">Leitfaden nötig</th><th style="width:160px">Leitfaden vorhanden</th><th style="width:170px">KI-/Auto-Potenzial</th><th>Kommentar</th></tr></thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "cybertrading_rma_workspace_v2";
+    const CLOUD_DOC_SLUG = "lieferanten-rma";
+    const PIN_STORAGE_KEY = "cybertrading_rma_workspace_pin";
+    const BASE_DATA = [
+      {id:"1.1",lane:"A",type:"process",title:"Technik sendet standardisierte Defekt-Mail",description:"Das Technik-Template beschreibt Defekt, Teildefekt, verbogene Ware, fehlendes Zubehör, falsches Zubehör oder fehlendes Gerät. Die Mail landet im Shared Mailbox Bereich service@cybertrading.de und wird in den Ordner Lieferanten-RMA abgelegt.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Mail-Parsing ist gut automatisierbar."},
+      {id:"1.2",lane:"A",type:"process",title:"Mail inhaltlich prüfen",description:"Kontrolle, ob die Mail für die Bearbeitung ausreicht: Artikel, Fehlerbild, Seriennummer, BE/AU-Bezug, Zubehörstatus, Menge, Fotos oder erkennbare technische Beschreibung.",guideNeeded:true,guideExists:false,ai:"full",comment:"Saubere Intake-Regeln reduzieren Rückfragen."},
+      {id:"1.3",lane:"A",type:"process",title:"Manuelle RMA-Nummer im Betreff vergeben",description:"Die Technik-Mail kommt mit einem Standardbetreff an. Im Outlook-Betreff wird die laufende Lieferanten-RMA-Nummer ergänzt. Das ist aktuell die primäre Fall-ID.",guideNeeded:true,guideExists:false,ai:"full",comment:"Perfekter Kandidat für Script oder Outlook-Automation."},
+      {id:"2.1",lane:"A",type:"process",title:"Bestellung in SelectLine öffnen",description:"Die betroffene BE wird aufgerufen, um Artikel, Lieferant, Mengen und den Bezug zum Kundenauftrag zu prüfen.",guideNeeded:true,guideExists:false,ai:"mid",comment:"Als SOP für neue Mitarbeiter sehr sinnvoll."},
+      {id:"2.2",lane:"A",type:"process",title:"Verhandlung / Einkäufer-Info im Journal prüfen",description:"Im Bestelljournal wird die ursprüngliche Verhandlung des Einkäufers gelesen, damit klar ist, was bestellt wurde, wie verhandelt wurde und welche Ausgangslage für Gutschrift, Austausch oder Nachlieferung besteht.",guideNeeded:true,guideExists:false,ai:"mid",comment:"Schulungsrelevant."},
+      {id:"2.3",lane:"A",type:"process",title:"Problemtyp ableiten",description:"Einordnung: Fehlteil / fehlendes Gerät / fehlendes Zubehör / Defekt / Teildefekt / Falschlieferung / Zusatzartikel / Transportabweichung. Diese Einordnung bestimmt den weiteren Hauptpfad.",guideNeeded:true,guideExists:false,ai:"full",comment:"Sehr gut standardisierbar."},
+      {id:"3.1",lane:"A",type:"process",title:"Lieferanten-Mail mit Standardtext erstellen",description:"Lieferant wird mit Defektbeschreibung, Seriennummer, Fehlmenge oder Abweichung kontaktiert. Forderung je nach Fall: Nachlieferung, Austausch, Discount oder Gutschrift.",guideNeeded:true,guideExists:false,ai:"full",comment:"Vorlagenlogik je nach Problemtyp standardisieren."},
+      {id:"3.2",lane:"A",type:"process",title:"Journal-Eintrag zur Erstansprache",description:"Standard: Kürzel + Datum + Lieferant informiert + nach Nachlieferung / Discount / Gutschrift gefragt. Damit startet die nachvollziehbare Fallhistorie in SelectLine.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Mit Templates gut automatisierbar."},
+      {id:"4A.1",lane:"B",type:"escalation",title:"Frist 24h: Lieferant antwortet?",description:"Auf die erste Mail soll der Lieferant innerhalb von 24 Stunden reagieren. Ohne Reaktion startet der Eskalationspfad.",guideNeeded:false,guideExists:"na",ai:"full",comment:"Perfekt für Fristenlogik."},
+      {id:"4A.2",lane:"B",type:"process",title:"Kann der Lieferant nachliefern?",description:"Entscheidung nach Rückmeldung des Lieferanten: Nachlieferung möglich oder nicht möglich.",guideNeeded:false,guideExists:"na",ai:"mid",comment:"Mittel – abhängig von Mail-Auswertung."},
+      {id:"4A.2.1",lane:"B",type:"process",title:"Ja – Journal: Warten auf Nachlieferung",description:"Eintrag mit Kürzel + Datum + Warten auf Nachlieferung. Gleichzeitig wird im Journal eine Wiedervorlage für drei Tage gesetzt, um den Eingang zu prüfen.",guideNeeded:false,guideExists:"na",ai:"full",comment:"Wiedervorlage ist sehr gut automatisierbar."},
+      {id:"4A.2.2",lane:"B",type:"process",title:"Nach 2–3 Tagen Wareneingang prüfen",description:"Kontrolle, ob die Nachlieferung eingetroffen ist. Falls eingetroffen, kann der Fall in den Abschluss laufen. Falls nicht, startet erneut Nachfassen oder Eskalation.",guideNeeded:false,guideExists:"na",ai:"full",comment:"Reminder und Tracking möglich."},
+      {id:"4A.3",lane:"B",type:"process",title:"Nein – Artikel von Bestellung entlinken",description:"Wenn der ursprüngliche Lieferant nicht nachliefern kann, wird die betroffene Position von der Bestellung entlinkt, damit die weitere Disposition sauber vom Altvorgang getrennt ist.",guideNeeded:true,guideExists:false,ai:"mid",comment:"Fehleranfällig, weil Folgeprozess davon abhängt."},
+      {id:"4A.4",lane:"B",type:"process",title:"Kommentar auf AU-Position setzen",description:"Standardtext im Auftrag: Kürzel + Datum + Nachkauf + RMA-Nummer + Bestellnummer. Das informiert Disposition transparent über den notwendigen Ersatzbeschaffungsweg.",guideNeeded:true,guideExists:false,ai:"high",comment:"Textbaustein und Datums-/ID-Logik sind standardisierbar."},
+      {id:"4A.5",lane:"B",type:"process",title:"Disposition indirekt informieren",description:"Die Information erfolgt über Entlinkung und Kommentar in der AU. Ergebnis: Nachkauf oder Nutzung von Lagerware wird angestoßen.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Mit sauberem Workflow gut vorbereitbar."},
+      {id:"4A.6",lane:"B",type:"process",title:"Mit Lieferant über Discount oder Gutschrift verhandeln",description:"Bei fehlendem Zubehör kann ein Discount auf Zusatzartikel verhandelt werden. Bei komplett fehlendem Gerät wird in der Regel eine Gutschrift in Höhe des EK gefordert.",guideNeeded:true,guideExists:false,ai:"mid",comment:"Hier fehlen aktuell Grundsätze."},
+      {id:"9A",lane:"B",type:"end",title:"Abschluss Nachlieferung / Fehlteil",description:"Nachlieferung angekommen oder finanzielle Lösung erreicht: Discount bzw. Gutschrift prüfen und Journal final abschließen.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Finanzielle Prüfung ist standardisierbar."},
+      {id:"4B.1",lane:"C",type:"process",title:"Defektes Gerät an Lieferant melden",description:"Defekt wird mit Seriennummer, Fehlerbild und gewünschter Lösung gemeldet. Zusätzlich wird angefragt, ob Rücksendung nötig ist oder Verschrottung vor Ort erlaubt ist.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Mail-Vorlagen bieten viel Potenzial."},
+      {id:"5.1",lane:"C",type:"tech",title:"Lieferant will Nachweise / Testlogs / Fotos",description:"Wenn der Lieferant den Defekt anzweifelt oder genauere Nachweise fordert, wird die Bestellung per Journal wieder an die Technik gespielt.",guideNeeded:true,guideExists:false,ai:"mid",comment:"Checklisten würden Schleifen verkürzen."},
+      {id:"5.2",lane:"C",type:"tech",title:"Technik liefert Zuarbeit – an Lieferant weiterleiten",description:"Erhaltene Logs, Bilder oder Zusatzinfos werden an den Lieferanten nachgereicht. Danach läuft der Defektpfad weiter.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Teilautomatisierbar."},
+      {id:"6.1",lane:"C",type:"process",title:"Lieferant verlangt Rücksendung?",description:"Wenn ja, Versandadresse und Versandaccount / Versandlabel anfordern. Wenn nein, aber Gutschrift bei Entsorgung möglich ist, in den Schwundpfad wechseln.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Mail-Steuerung gut möglich."},
+      {id:"6.2",lane:"C",type:"process",title:"Rücksendeauftrag manuell in SelectLine anlegen",description:"Neuen Auftrag händisch anlegen, da kein direktes Kopieren aus der BE möglich ist. Lieferant wird als Kunde verwendet, Lieferdatum, Nettokontrolle, Channel 'Rücksendung zum Lieferanten', Bearbeiter und Ware vorhanden = Lagerware werden gepflegt.",guideNeeded:true,guideExists:false,ai:"low",comment:"Komplexer Kernschritt; ideal für SOP."},
+      {id:"6.2.1",lane:"C",type:"process",title:"Lieferant als Kunde vorhanden?",description:"Falls nicht vorhanden, muss zunächst eine Kundennummer angelegt werden. Danach Artikel im Auftrag anlegen, mit BE verlinken und Journal per Drag & Drop an den Auftrag hängen.",guideNeeded:true,guideExists:false,ai:"mid",comment:"Sollte klar geregelt sein, wann neue Stammdaten entstehen."},
+      {id:"6.3",lane:"C",type:"process",title:"Drittland? Dann Commercial Invoice erstellen",description:"Bei Lieferanten außerhalb relevanter Standardgebiete wird eine Commercial Invoice als PDF gepflegt.",guideNeeded:true,guideExists:false,ai:"mid",comment:"Hoher Nutzen durch feste Vorlage plus Feldmapping."},
+      {id:"6.4",lane:"C",type:"process",title:"Journal + Technik + Logistik anstoßen",description:"Journal dokumentiert Auftragserstellung und Verlinkung. Technik wird informiert, den Artikel auf die Rücksende-AU zu buchen und an die Logistik zu übergeben.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Mit Vorlagen und Aufgabenlogik gut vorbereitbar."},
+      {id:"6.5",lane:"C",type:"process",title:"Tracking erhalten, an Lieferant senden, nach 5 Tagen prüfen",description:"Nach Versand kommt die Trackingnummer aus der Logistik. Diese wird an den Lieferanten gemailt. Nach ca. fünf Tagen wird der Status geprüft und Discount / Gutschrift aktiv nachgefordert.",guideNeeded:false,guideExists:"na",ai:"full",comment:"Reminder- und Statuslogik ist nahezu ideal für Automatisierung."},
+      {id:"7.1",lane:"C",type:"process",title:"Alternativ: Schwundauftrag anlegen",description:"Wenn der Lieferant die Ware nicht zurückhaben möchte und eine Gutschrift trotzdem erteilt, wird statt Rücksendung ein Schwundauftrag angelegt. Kunde = Cybertrading, Channel = Schwund, keine Commercial Invoice.",guideNeeded:true,guideExists:false,ai:"mid",comment:"Eng verwandt mit Rücksendeauftrag, aber mit Sonderregeln."},
+      {id:"7.2",lane:"C",type:"process",title:"Technik bucht für Schwund aus – Logistik / Stockmanagement entsorgt",description:"Nach Journalhinweis bucht die Technik den Artikel für Schwund aus und übergibt an die Logistik.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Gute Übergabestelle für klare Standards."},
+      {id:"8.1–8.4",lane:"C",type:"escalation",title:"Eskalationspfad bei ausbleibender Antwort",description:"24h ohne Antwort → Reminder. Danach weitere 3 Tage → erneute Mail. Danach weitere 3 Tage → Abteilungsleiter in CC. Nochmals 3 Tage → Chef in CC.",guideNeeded:false,guideExists:"na",ai:"full",comment:"Fristen-Engine, CC-Stufen und Reminder können vollautomatisch laufen."},
+      {id:"9B",lane:"C",type:"end",title:"Finale Gutschrift / Discount prüfen & Journal abschließen",description:"Erst wenn der finanzielle Ausgleich wirklich vorliegt und geprüft wurde, ist die Lieferanten-RMA abgeschlossen.",guideNeeded:false,guideExists:"na",ai:"high",comment:"Finanzieller Abschluss standardisierbar."}
+    ];
+
+    const lanes = {
+      A:{title:"Phase A – Eingang & Initialisierung", text:"Vom Technik-Hinweis bis zur ersten Lieferantenansprache – inklusive manueller RMA-Identifikation und ERP-Prüfung."},
+      B:{title:"Phase B – Fehlteil / Nachlieferung", text:"Dieser Zweig greift bei fehlendem Gerät, fehlendem Zubehör oder nicht gelieferter Position."},
+      C:{title:"Phase C – Defekt / Rücksendung / Schwund", text:"Dieser Zweig greift bei tatsächlich defekter Ware, Rückfragen des Lieferanten, Rücksendung zum Lieferanten oder Verschrottung vor Ort."}
+    };
+
+    let cards = loadData();
+    let selectedId = null, autosaveTimer = null;
+    const board = document.getElementById("board");
+    const matrixBody = document.getElementById("matrixBody");
+    const matrixCount = document.getElementById("matrixCount");
+    const saveStatus = document.getElementById("saveStatus");
+    const pinInput = document.getElementById("pinInput");
+    pinInput.value = localStorage.getItem(PIN_STORAGE_KEY) || "";
+    const editorEmpty = document.getElementById("editorEmpty");
+    const editorForm = document.getElementById("editorForm");
+
+    const fields = {
+      id: document.getElementById("f-id"), lane: document.getElementById("f-lane"), type: document.getElementById("f-type"),
+      title: document.getElementById("f-title"), description: document.getElementById("f-description"),
+      guideNeeded: document.getElementById("f-guideNeeded"), guideExists: document.getElementById("f-guideExists"),
+      ai: document.getElementById("f-ai"), comment: document.getElementById("f-comment")
+    };
+
+    function loadData(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw) return JSON.parse(raw);
+      }catch(e){}
+      return JSON.parse(JSON.stringify(BASE_DATA));
+    }
+
+    async function cloudLoad(){
+      updateSaveStatus("Lade Cloud-Daten …");
+      try{
+        localStorage.setItem(PIN_STORAGE_KEY, pinInput.value.trim());
+        const res = await fetch(`/api/workspace?slug=${encodeURIComponent(CLOUD_DOC_SLUG)}`, {
+          headers: {"x-workspace-pin": pinInput.value.trim()}
+        });
+        const payload = await res.json();
+        if(!res.ok) throw new Error(payload.error || "Cloud laden fehlgeschlagen");
+        if(payload.data && Array.isArray(payload.data.cards)){
+          cards = payload.data.cards;
+        }else if(Array.isArray(payload.data)){
+          cards = payload.data;
+        }else{
+          cards = JSON.parse(JSON.stringify(BASE_DATA));
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+        cards.sort(compareIds);
+        renderBoard(); renderMatrix();
+        if(selectedId && !cards.find(c => c.id === selectedId)){ selectedId = null; }
+        if(selectedId){ selectCard(selectedId); }
+        updateSaveStatus("Cloud geladen");
+      }catch(err){
+        console.error(err);
+        updateSaveStatus("Cloud-Laden fehlgeschlagen");
+        alert("Cloud-Laden fehlgeschlagen: " + err.message);
+      }
+    }
+
+    async function cloudSave(){
+      updateSaveStatus("Speichere Cloud …");
+      try{
+        localStorage.setItem(PIN_STORAGE_KEY, pinInput.value.trim());
+        const res = await fetch(`/api/workspace`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-workspace-pin": pinInput.value.trim()
+          },
+          body: JSON.stringify({
+            slug: CLOUD_DOC_SLUG,
+            data: { cards }
+          })
+        });
+        const payload = await res.json();
+        if(!res.ok) throw new Error(payload.error || "Cloud speichern fehlgeschlagen");
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+        updateSaveStatus("Cloud gespeichert");
+      }catch(err){
+        console.error(err);
+        updateSaveStatus("Cloud-Speichern fehlgeschlagen");
+        alert("Cloud-Speichern fehlgeschlagen: " + err.message);
+      }
+    }
+
+    function saveData(showInstant=false){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+      updateSaveStatus(showInstant ? "Gespeichert" : "Automatisch gespeichert");
+    }
+    function queueSave(){
+      updateSaveStatus("Speichere …");
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(() => saveData(false), 350);
+    }
+    function updateSaveStatus(text){
+      saveStatus.textContent = text;
+      clearTimeout(updateSaveStatus._timer);
+      updateSaveStatus._timer = setTimeout(() => saveStatus.textContent = "Autosave aktiv", 1800);
+    }
+
+    function normalizeSegments(id){
+      return String(id || "").replace(/\s+/g,'').split(/(?=[A-Za-z])|(?<=[A-Za-z])|[.\-–\/]+/).filter(Boolean).map(seg => /^\d+$/.test(seg) ? Number(seg) : seg.toUpperCase());
+    }
+    function compareIds(a,b){
+      const A = normalizeSegments(a.id), B = normalizeSegments(b.id), len = Math.max(A.length, B.length);
+      for(let i=0;i<len;i++){
+        const av = A[i], bv = B[i];
+        if(av === undefined) return -1;
+        if(bv === undefined) return 1;
+        const an = typeof av === "number", bn = typeof bv === "number";
+        if(an && bn){ if(av !== bv) return av - bv; }
+        else if(an !== bn){ return an ? -1 : 1; }
+        else{
+          const cmp = String(av).localeCompare(String(bv), 'de', {numeric:true, sensitivity:'base'});
+          if(cmp !== 0) return cmp;
+        }
+      }
+      return 0;
+    }
+
+    function aiLabel(ai){ return ai === "full" ? "Sehr hoch" : ai === "high" ? "Hoch" : ai === "mid" ? "Mittel" : "Eher niedrig"; }
+    function aiClass(ai){ return ai === "full" ? "ai-full" : ai === "high" ? "ai-high" : ai === "mid" ? "ai-mid" : "ai-low"; }
+    function guideExistsLabel(v){ return v === true ? "Ja" : v === false ? "Nein" : "n/a"; }
+    function escapeHtml(str){ return String(str ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;"); }
+
+    function renderBoard(){
+      board.innerHTML = "";
+      Object.entries(lanes).forEach(([laneKey, lane]) => {
+        const laneEl = document.createElement("div");
+        laneEl.className = "lane";
+        laneEl.innerHTML = `<h3>${lane.title}</h3><p>${lane.text}</p><div class="laneCards"></div>`;
+        const cardsWrap = laneEl.querySelector(".laneCards");
+        cards.filter(c => c.lane === laneKey).sort(compareIds).forEach(card => cardsWrap.appendChild(renderCard(card)));
+        board.appendChild(laneEl);
+      });
+    }
+    function renderCard(card){
+      const el = document.createElement("div");
+      el.className = `card ${card.type || 'process'}`;
+      el.dataset.id = card.id;
+      el.innerHTML = `<div class="id">${escapeHtml(card.id)}</div><h4>${escapeHtml(card.title)}</h4><p>${escapeHtml(card.description)}</p>
+      <div class="meta">
+        <span class="tag ${card.guideNeeded ? 'needY':'needN'}">LG nötig: ${card.guideNeeded ? 'Ja':'Nein'}</span>
+        <span class="tag ${card.guideExists === true ? 'haveY' : card.guideExists === false ? 'haveN' : 'needN'}">LG vorhanden: ${guideExistsLabel(card.guideExists)}</span>
+        <span class="tag ${aiClass(card.ai)}">KI: ${aiLabel(card.ai)}</span>
+      </div>`;
+      el.addEventListener("click", () => selectCard(card.id));
+      return el;
+    }
+    function renderMatrix(){
+      const list = [...cards].sort(compareIds);
+      matrixCount.textContent = `${list.length} Karten`;
+      matrixBody.innerHTML = list.map(card => `
+        <tr>
+          <td>${escapeHtml(card.id)}</td>
+          <td>${escapeHtml(card.title)}</td>
+          <td><span class="tag ${card.guideNeeded ? 'needY':'needN'}">${card.guideNeeded ? 'Ja':'Nein'}</span></td>
+          <td><span class="tag ${card.guideExists === true ? 'haveY' : card.guideExists === false ? 'haveN' : 'needN'}">${guideExistsLabel(card.guideExists)}</span></td>
+          <td><span class="tag ${aiClass(card.ai)}">${aiLabel(card.ai)}</span></td>
+          <td>${escapeHtml(card.comment || '')}</td>
+        </tr>`).join("");
+    }
+
+    function selectCard(id){
+      selectedId = id;
+      const card = cards.find(c => c.id === id);
+      if(!card) return;
+      editorEmpty.classList.add("hidden");
+      editorForm.classList.remove("hidden");
+      fields.id.value = card.id || "";
+      fields.lane.value = card.lane || "A";
+      fields.type.value = card.type || "process";
+      fields.title.value = card.title || "";
+      fields.description.value = card.description || "";
+      fields.guideNeeded.value = String(Boolean(card.guideNeeded));
+      fields.guideExists.value = card.guideExists === "na" ? "na" : String(card.guideExists);
+      fields.ai.value = card.ai || "mid";
+      fields.comment.value = card.comment || "";
+      document.querySelectorAll(".card").forEach(el => el.style.outline = el.dataset.id === id ? "2px solid rgba(65,211,255,.55)" : "none");
+    }
+
+    function applyEditor(){
+      if(!selectedId) return;
+      const idx = cards.findIndex(c => c.id === selectedId);
+      if(idx === -1) return;
+      const originalId = cards[idx].id;
+      cards[idx] = {
+        ...cards[idx],
+        id: fields.id.value.trim() || originalId,
+        lane: fields.lane.value,
+        type: fields.type.value,
+        title: fields.title.value.trim(),
+        description: fields.description.value.trim(),
+        guideNeeded: fields.guideNeeded.value === "true",
+        guideExists: fields.guideExists.value === "na" ? "na" : fields.guideExists.value === "true",
+        ai: fields.ai.value,
+        comment: fields.comment.value.trim()
+      };
+      selectedId = cards[idx].id;
+      cards.sort(compareIds);
+      renderBoard(); renderMatrix(); selectCard(selectedId); queueSave();
+    }
+
+    function nextId(){
+      const nums = cards.map(c => c.id).filter(id => /^\d+/.test(id)).map(id => parseInt(String(id).match(/^\d+/)[0], 10));
+      const max = nums.length ? Math.max(...nums) : 9;
+      return `${max + 1}.0`;
+    }
+    function addCard(){
+      const newCard = {id:nextId(), lane:"A", type:"process", title:"Neue Karte", description:"Beschreibung ergänzen.", guideNeeded:true, guideExists:false, ai:"mid", comment:""};
+      cards.push(newCard); cards.sort(compareIds); renderBoard(); renderMatrix(); selectCard(newCard.id); queueSave();
+    }
+    function duplicateCard(){
+      if(!selectedId) return;
+      const card = cards.find(c => c.id === selectedId); if(!card) return;
+      const clone = JSON.parse(JSON.stringify(card));
+      clone.id = nextId(); clone.title = card.title + " (Kopie)";
+      cards.push(clone); cards.sort(compareIds); renderBoard(); renderMatrix(); selectCard(clone.id); queueSave();
+    }
+    function deleteCard(){
+      if(!selectedId) return;
+      if(!confirm(`Karte ${selectedId} wirklich löschen?`)) return;
+      cards = cards.filter(c => c.id !== selectedId); selectedId = null; renderBoard(); renderMatrix();
+      editorForm.classList.add("hidden"); editorEmpty.classList.remove("hidden"); queueSave();
+    }
+    function resetAll(){
+      if(!confirm("Wirklich auf den Basisstand zurücksetzen? Lokale Änderungen gehen verloren.")) return;
+      cards = JSON.parse(JSON.stringify(BASE_DATA)); selectedId = null; localStorage.removeItem(STORAGE_KEY);
+      renderBoard(); renderMatrix(); editorForm.classList.add("hidden"); editorEmpty.classList.remove("hidden"); updateSaveStatus("Basis wiederhergestellt");
+    }
+    function exportJson(){
+      const blob = new Blob([JSON.stringify(cards, null, 2)], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "cybertrading_rma_workspace.json"; a.click(); URL.revokeObjectURL(a.href);
+      updateSaveStatus("JSON exportiert");
+    }
+    function switchView(viewId){
+      document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.dataset.view === viewId));
+      document.getElementById("boardView").classList.toggle("hidden", viewId !== "boardView");
+      document.getElementById("matrixView").classList.toggle("hidden", viewId !== "matrixView");
+    }
+
+    Object.values(fields).forEach(el => { el.addEventListener("input", applyEditor); el.addEventListener("change", applyEditor); });
+    document.getElementById("saveBtn").addEventListener("click", () => saveData(true));
+    document.getElementById("cloudLoadBtn").addEventListener("click", cloudLoad);
+    document.getElementById("cloudSaveBtn").addEventListener("click", cloudSave);
+    pinInput.addEventListener("change", () => localStorage.setItem(PIN_STORAGE_KEY, pinInput.value.trim()));
+    document.getElementById("addBtn").addEventListener("click", addCard);
+    document.getElementById("duplicateBtn").addEventListener("click", duplicateCard);
+    document.getElementById("deleteBtn").addEventListener("click", deleteCard);
+    document.getElementById("resetBtn").addEventListener("click", resetAll);
+    document.getElementById("exportBtn").addEventListener("click", exportJson);
+    document.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => switchView(btn.dataset.view)));
+
+    cards.sort(compareIds); renderBoard(); renderMatrix();
+    if(pinInput.value.trim()){
+      cloudLoad();
+    }
+  </script>
+</body>
+</html>
